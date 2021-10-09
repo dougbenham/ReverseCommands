@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using System;
+using HarmonyLib;
 using RimWorld;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,8 @@ namespace ReverseCommands
 {
 	public static class Tools
 	{
+        private static readonly Type _robotType = AccessTools.TypeByName("X2_AIRobot");
+
 		public static FloatMenuLabels labelMenu;
 		public static FloatMenuColonists actionMenu;
 
@@ -27,7 +30,7 @@ namespace ReverseCommands
 		{
 			var result = new Dictionary<string, Dictionary<Pawn, FloatMenuOption>>();
 
-			var firstSelectedPawn = Find.Selector.SelectedObjects?.FirstOrDefault(o => o is Pawn && (o as Pawn).IsColonist);
+			var firstSelectedPawn = Find.Selector.SelectedObjects?.FirstOrDefault(o => o is Pawn p && (p.IsColonist || _robotType.IsInstanceOfType(p)));
 			if (firstSelectedPawn != null) return result;
 
 			var map = Find.CurrentMap;
@@ -50,16 +53,16 @@ namespace ReverseCommands
 			return result;
 		}
 
-		public static bool PawnUsable(Pawn pawn)
-		{
-			return pawn.IsColonistPlayerControlled
-				&& pawn.Dead == false
-				&& pawn.Spawned
-				&& pawn.Downed == false
-				&& pawn.Map == Find.CurrentMap;
-		}
+        public static bool PawnUsable(Pawn pawn)
+        {
+            return (_robotType.IsInstanceOfType(pawn) || pawn.IsColonistPlayerControlled)
+                   && pawn.Dead == false
+                   && pawn.Spawned
+                   && pawn.Downed == false
+                   && pawn.Map == Find.CurrentMap;
+        }
 
-		public static FloatMenuOption MakeMenuItemForLabel(string label, Dictionary<Pawn, FloatMenuOption> dict)
+        public static FloatMenuOption MakeMenuItemForLabel(string label, Dictionary<Pawn, FloatMenuOption> dict)
 		{
 			var pawns = dict.Keys.ToList();
 			var options = dict.Values.ToList();
